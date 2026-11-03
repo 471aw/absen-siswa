@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="id"><head>
 <meta name="referrer" content="no-referrer">
-<meta name="af-build" content="1.8.5-reset-reason">
+<meta name="af-build" content="1.8.6-general-program">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
@@ -100,7 +100,7 @@ html,body{min-height:100%;background:#eaf3fb;color:var(--cp-ink);font-family:Ari
 </aside>
 <main class="contentArea">
 <div class="top no-print">
-  <div class="topLeft"><button class="mobileMenu" onclick="toggleSidebar()">☰</button><div><div class="topAppName"><span id="adminSystemName">Absen Murid</span></div><div class="topAppSub"><span class="schoolNameText">Sekolah</span> • Sistem Absensi PKL</div></div></div>
+  <div class="topLeft"><button class="mobileMenu" onclick="toggleSidebar()">☰</button><div><div class="topAppName"><span id="adminSystemName">Absen Murid</span></div><div class="topAppSub"><span class="schoolNameText">Sekolah</span> • Sistem Absensi</div></div></div>
   <div class="topRight">
     <div class="topClock"><span id="topDate">-</span><b id="topTime">--:--:--</b></div>
     <div class="userAvatar" id="topAvatar">AD</div>
@@ -110,7 +110,7 @@ html,body{min-height:100%;background:#eaf3fb;color:var(--cp-ink);font-family:Ari
 </div>
 <div class="pageHero">
   <div id="pageHeroIcon" class="pageHeroIcon">⌂</div>
-  <div class="pageHeroText"><h1 id="pageHeroTitle">Dashboard</h1><p id="pageHeroSub">Ringkasan operasional absensi peserta PKL.</p></div>
+  <div class="pageHeroText"><h1 id="pageHeroTitle">Dashboard</h1><p id="pageHeroSub">Ringkasan operasional absensi peserta.</p></div>
   <div id="pageBread" class="pageBread">Dashboard</div>
   <span id="adminName" class="hidden"></span>
 </div>
@@ -189,7 +189,7 @@ html,body{min-height:100%;background:#eaf3fb;color:var(--cp-ink);font-family:Ari
   </div>
   <div class="card adminOnly">
     <h3>Master Instansi</h3>
-    <p class="muted">Instansi dibuat satu kali dan dapat digunakan kembali pada Program PKL tahun berikutnya.</p>
+    <p class="muted">Instansi dibuat satu kali dan dapat digunakan kembali pada program lain atau periode berikutnya.</p>
     <input id="insId" type="hidden">
     <div class="field"><label>Nama Instansi</label><input id="insName" placeholder="contoh: PT ABC"></div>
     <div class="field"><label>Alamat</label><textarea id="insAddress"></textarea></div>
@@ -199,13 +199,13 @@ html,body{min-height:100%;background:#eaf3fb;color:var(--cp-ink);font-family:Ari
 
 <div class="card adminOnly">
   <h3>Instansi dalam Program</h3>
-  <p class="muted">Pilih Program PKL dan Instansi yang sudah terdaftar, lalu tentukan lama PKL pada instansi tersebut.</p>
+  <p class="muted">Pilih Program dan Instansi yang sudah terdaftar, lalu tentukan periode program pada instansi tersebut.</p>
   <input id="relId" type="hidden">
   <div class="row">
-    <div class="field"><label>Program PKL</label><select id="relProgram" onchange="syncProgramInstitutionBounds(true)"></select></div>
+    <div class="field"><label>Program</label><select id="relProgram" onchange="syncProgramInstitutionBounds(true)"></select></div>
     <div class="field"><label>Instansi</label><select id="relInstitution"></select></div>
-    <div class="field"><label>Mulai PKL di Instansi</label><input id="relStart" type="date"></div>
-    <div class="field"><label>Selesai PKL di Instansi</label><input id="relEnd" type="date"></div>
+    <div class="field"><label>Mulai di Instansi</label><input id="relStart" type="date"></div>
+    <div class="field"><label>Selesai di Instansi</label><input id="relEnd" type="date"></div>
     <div class="field"><label>Aturan Lokasi</label><select id="relLocationMode"><option value="ANYWHERE">Bebas lokasi — GPS tetap direkam</option><option value="FIXED_LOCATION">Wajib titik/radius lokasi</option></select></div>
     <div class="field"><label>Aturan Waktu</label><select id="relTimeMode"><option value="FLEXIBLE">Fleksibel — tanpa batas jam</option><option value="SCHEDULED">Terjadwal — wajib hari & jam</option></select></div>
   </div>
@@ -325,7 +325,7 @@ html,body{min-height:100%;background:#eaf3fb;color:var(--cp-ink);font-family:Ari
 </section>
 <section id="settings" class="page hidden"><div class="card"><h3>Pengaturan Sistem</h3><p class="muted">Perubahan penting langsung memengaruhi semua peserta. Play Integrity diaktifkan setelah APK sudah terhubung ke Play Console.</p><div id="settingsOut"></div></div></section>
 </main></div></div></div>
-<script src="../api-client.js?v=1850-reset-reason"></script>
+<script src="../api-client.js?v=1860-general"></script>
 <script>
 let TOKEN=sessionStorage.getItem('af_admin_token')||'', ADMIN_NAME=sessionStorage.getItem('af_admin_name')||'', ADMIN_ROLE=sessionStorage.getItem('af_admin_role')||'', ADMIN_SCHOOL=null, M=null, USERS=[], REPORT_USERS=[], APP_CONFIG=null, SUPER_DATA=null, REPORT_SELECTION_INIT=false, LAST_REPORT=null;
 const $=id=>document.getElementById(id);let ADMIN_BUSY_COUNT=0,ADMIN_DONE_TIMER=null;
@@ -453,7 +453,7 @@ async function start(){
   }
 }
 function pageMeta(id){return({
-  dash:['⌂','Dashboard','Ringkasan operasional absensi peserta PKL.'],
+  dash:['⌂','Dashboard','Ringkasan operasional absensi peserta.'],
   users:['👤','Peserta','Kelola peserta, penempatan, perangkat, dan akses absensi.'],
   masters:['▦','Master Data','Kelola program, master instansi, relasi program, dan titik referensi jadwal.'],
   schedule:['◷','Jadwal','Atur jadwal datang, pulang, dan batas perizinan.'],
@@ -630,7 +630,7 @@ function fillSelects(){
     if(M.programs.some(x=>String(x.id)===String(keep)&&x.status==='ACTIVE'))$('ppProgram').value=keep;
   }
 
-  if($('relProgram'))$('relProgram').innerHTML='<option value="">Pilih Program PKL</option>'+opts(M.programs);
+  if($('relProgram'))$('relProgram').innerHTML='<option value="">Pilih Program</option>'+opts(M.programs);
   if($('relInstitution'))$('relInstitution').innerHTML='<option value="">Pilih Instansi</option>'+opts(M.institutions);
 
   filterAssignInstitutions();
@@ -720,8 +720,8 @@ function editLocation(id){
 async function saveProgram(){
   try{
     const start=$('progStart').value,end=$('progEnd').value;
-    if(!start||!end)throw new Error('Tanggal mulai dan selesai Program PKL wajib diisi.');
-    if(start>end)throw new Error('Tanggal selesai Program PKL tidak boleh sebelum tanggal mulai.');
+    if(!start||!end)throw new Error('Tanggal mulai dan selesai Program wajib diisi.');
+    if(start>end)throw new Error('Tanggal selesai Program tidak boleh sebelum tanggal mulai.');
     const joinMode=(document.querySelector('input[name="progJoinMode"]:checked')||{}).value||'CODE';
     const r=await gas('apiAdminUpsertMaster',TOKEN,'PROGRAM',{
       id:$('progId').value||undefined,name:$('progName').value,start_date:start,end_date:end,status:'ACTIVE',
@@ -743,7 +743,7 @@ async function saveInstitution(){
     await gas('apiAdminUpsertMaster',TOKEN,'INSTITUTION',{
       id:$('insId').value||undefined,name:$('insName').value,address:$('insAddress').value,status:'ACTIVE'
     });
-    clearInstitution();note('Master Instansi disimpan. Instansi dapat digunakan kembali untuk Program PKL lain.');await loadMasters();
+    clearInstitution();note('Master Instansi disimpan. Instansi dapat digunakan kembali untuk Program lain.');await loadMasters();
   }catch(e){note(e.message,true)}
 }
 async function deleteInstitution(id,name){
@@ -769,24 +769,24 @@ function syncProgramInstitutionBounds(fillDefaults){
   const st=$('relStart'),en=$('relEnd'),h=$('relPeriodHelp');
   if(!p){
     st.removeAttribute('min');st.removeAttribute('max');en.removeAttribute('min');en.removeAttribute('max');
-    if(h)h.textContent='Pilih Program PKL terlebih dahulu.';return;
+    if(h)h.textContent='Pilih Program terlebih dahulu.';return;
   }
   if(p.start_date){st.min=p.start_date;en.min=p.start_date}else{st.removeAttribute('min');en.removeAttribute('min')}
   if(p.end_date){st.max=p.end_date;en.max=p.end_date}else{st.removeAttribute('max');en.removeAttribute('max')}
   if(fillDefaults){st.value=p.start_date||'';en.value=p.end_date||''}
-  if(h)h.textContent='Periode Program: '+(p.start_date||'-')+' s.d. '+(p.end_date||'-')+'. Periode PKL di instansi harus berada di dalam rentang ini.';
+  if(h)h.textContent='Periode Program: '+(p.start_date||'-')+' s.d. '+(p.end_date||'-')+'. Periode instansi harus berada di dalam rentang ini.';
 }
 async function saveProgramInstitution(){
   try{
     const pid=$('relProgram').value,iid=$('relInstitution').value,start=$('relStart').value,end=$('relEnd').value;
-    if(!pid)throw new Error('Pilih Program PKL.');
+    if(!pid)throw new Error('Pilih Program.');
     if(!iid)throw new Error('Pilih Instansi.');
     if(!start||!end)throw new Error('Tanggal mulai dan selesai di instansi wajib diisi.');
     if(start>end)throw new Error('Tanggal selesai tidak boleh sebelum tanggal mulai.');
     await gas('apiAdminUpsertMaster',TOKEN,'PROGRAM_INSTITUTION',{
       id:$('relId').value||undefined,program_id:pid,institution_id:iid,start_date:start,end_date:end,location_mode:$('relLocationMode').value,time_mode:$('relTimeMode').value,status:'ACTIVE'
     });
-    clearProgramInstitution();note('Instansi berhasil didaftarkan pada Program PKL.');await loadMasters();
+    clearProgramInstitution();note('Instansi berhasil didaftarkan pada Program.');await loadMasters();
   }catch(e){note(e.message,true)}
 }
 async function setProgramInstitutionStatus(id,status){
@@ -939,7 +939,7 @@ function syncSchedulePeriodBounds(fillDates=false){
   if(!rel){from.removeAttribute('min');from.removeAttribute('max');to.removeAttribute('min');to.removeAttribute('max');if(help)help.textContent='Pilih Program dan Instansi untuk menentukan periode jadwal.';return;}
   from.min=rel.start_date||'';from.max=rel.end_date||'';to.min=rel.start_date||'';to.max=rel.end_date||'';
   if(fillDates&&!$('schId').value){from.value=rel.start_date||'';to.value=rel.end_date||'';}
-  if(help)help.textContent='Mode Terjadwal • Periode PKL instansi: '+(rel.start_date||'-')+' s.d. '+(rel.end_date||'-')+'. Jadwal harus berada di dalam periode ini.';
+  if(help)help.textContent='Mode Terjadwal • Periode instansi: '+(rel.start_date||'-')+' s.d. '+(rel.end_date||'-')+'. Jadwal harus berada di dalam periode ini.';
 }
 function selectedScheduleDayNumbers(){return [...document.querySelectorAll('.schDayCheck:checked')].map(x=>Number(x.value)).filter(x=>x>=1&&x<=7);}
 function syncScheduleDaySelection(){
