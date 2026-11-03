@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="id"><head><meta charset="utf-8"><base target="_top"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="referrer" content="no-referrer">
+<meta name="af-mobile-policy" content="1.8.2-mobile-only">
 <meta name="af-build" content="1.8.1-syncfix">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -13,7 +14,7 @@
 <section id="bootView" class="boot"><div><div class="bootRing"></div><b>Menyiapkan Absensi…</b><div style="font-size:12px">Memeriksa sesi dan lokasi</div></div></section>
 <div id="appHeader" class="hero hidden"><div class="heroTop"><div><div id="brand" class="brand">Absensi</div><div id="version" class="ver"></div></div><button id="logoutBtn" class="logout hidden" onclick="logout()">Keluar</button></div><div id="welcome" class="welcome hidden"><small>Selamat datang</small><strong id="welcomeName">Peserta</strong></div></div>
 <div id="globalMsg" class="msg hidden"></div>
-<section id="browserBlockView" class="card authCard hidden"><h2>GPS diperlukan</h2><p class="muted">Perangkat/browser harus mendukung layanan lokasi (GPS) untuk melakukan absensi.</p></section>
+<section id="browserBlockView" class="card authCard hidden"><h2>Akses siswa hanya melalui HP</h2><p id="browserBlockMessage" class="muted">Absensi siswa hanya dapat digunakan melalui smartphone/HP. Laptop, PC, Chromebook, dan tablet tidak diizinkan.</p></section>
 <section id="loginView" class="card authCard hidden"><h2>Masuk Siswa</h2><p class="muted">Login menggunakan NIS dan PIN 6 digit.</p><label>NIS</label><input id="loginNis" autocomplete="username"><label>PIN 6 digit</label><input id="loginPin" type="password" inputmode="numeric" maxlength="6" autocomplete="current-password"><button class="primary" onclick="participantLogin(this)">Masuk</button><button class="secondary" onclick="showStudentRegistration()">Aktivasi Akun</button><button class="secondary" onclick="toggleRecovery()">Lupa PIN</button><div id="recoveryBox" class="hidden"><label>Email terdaftar</label><input id="recoveryEmail" type="email"><button class="secondary" onclick="sendRecoveryOtp(this)">Kirim OTP</button><label>Kode OTP</label><input id="recoveryOtp" inputmode="numeric" maxlength="6"><label>PIN baru 6 digit</label><input id="recoveryPin" type="password" inputmode="numeric" maxlength="6"><button class="primary" onclick="verifyRecoveryOtp(this)">Verifikasi & Ganti PIN</button></div><a href="./admin/" target="_top" style="display:block;text-align:center;margin-top:18px">Login Administrator / Guru</a></section>
 <section id="registerView" class="card authCard hidden"><h2>Aktivasi Akun Siswa</h2><p class="muted">Data NIS harus sudah dimasukkan Admin. Masukkan NIS dan Kode Program. Aktivasi akun tidak memerlukan GPS, titik lokasi, atau pemilihan tempat.</p><label>NIS</label><input id="regIdentifier" autocomplete="username"><label>Kode Program</label><input id="regProgramCode" autocomplete="off" placeholder="contoh: PD26-NYHV4D" style="text-transform:uppercase"><button class="secondary" onclick="previewActivation(this)">Cek Data</button><div id="activationPreview" class="hidden"><div id="activationIdentity" class="statusbox"></div><div id="regPlacementBox" class="hidden"><select id="regInstitution"></select><select id="regLocation"></select></div><div id="regPlacementHelp" class="muted" style="margin:8px 0">Instansi dan aturan absensi mengikuti penempatan Admin.</div><label>Email <span class="muted">(disimpan otomatis pada data siswa dan dipakai untuk pemulihan PIN)</span></label><input id="regEmail" type="email" autocomplete="email"><label>Buat PIN 6 digit</label><input id="regPin" type="password" inputmode="numeric" maxlength="6"><button class="primary" onclick="activateStudentAccount(this)">Aktivasi Akun</button></div><button class="secondary" onclick="backToLogin()">Kembali ke Login</button></section>
 <section id="pendingView" class="card authCard hidden"><h2>Akun Belum Aktif</h2><div class="statusbox">Hubungi Admin Sekolah untuk memeriksa status akun.</div><button class="secondary" onclick="bootstrap()">Periksa Status</button></section>
@@ -29,12 +30,22 @@
 </main></div>
 <div id="tabs" class="tabs hidden"><div class="tabsInner"><button class="active" onclick="showTab('Home',this)"><span>✓</span>Absensi</button><button onclick="showTab('Permit',this)"><span>📝</span>Perizinan</button><button onclick="showTab('History',this)"><span>🕘</span>Riwayat</button><button onclick="showTab('Profile',this)"><span>⚙️</span>Profil</button></div></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="./api-client.js?v=1811-syncfix"></script>
+<script src="./api-client.js?v=1820-mobile"></script>
 <script>
 let TOKEN=localStorage.getItem('af_token')||'',CONFIG=null,BOOT=null,ACT_PREVIEW=null,JOIN_PREVIEW=null,map=null,userMarker=null,accuracyCircle=null,gpsWatchId=null,lastGps=null;
 const $=id=>document.getElementById(id);function gas(name,...args){return window.AbsensiAPI.call(name,...args)}function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}function msg(t,e=false){const x=$('globalMsg');x.textContent=t;x.className='msg'+(e?' err':'');x.classList.remove('hidden');setTimeout(()=>x.classList.add('hidden'),6500)}function busy(b,on,t){if(!b)return;if(on){b.dataset.old=b.innerHTML;b.disabled=true;b.innerHTML='<span class="spinner"></span> '+(t||'Memproses')}else{b.disabled=false;b.innerHTML=b.dataset.old||'Lanjut'}}function hideAll(){['bootView','browserBlockView','loginView','registerView','pendingView','mainView'].forEach(x=>$(x)?.classList.add('hidden'));$('tabs').classList.add('hidden');$('logoutBtn').classList.add('hidden');$('welcome').classList.add('hidden')}function showHeader(){$('appHeader').classList.remove('hidden')}
 function deviceKey(){let k=localStorage.getItem('af_device_key')||'';if(!k){k=(crypto.randomUUID?crypto.randomUUID():('dev-'+Date.now()+'-'+Math.random().toString(36).slice(2)))+'-'+Math.random().toString(36).slice(2);localStorage.setItem('af_device_key',k)}return k}function deviceLabel(){const p=navigator.platform||'Web';const ua=navigator.userAgent||'';return (p+' • '+ua.replace(/\s+/g,' ').slice(0,75)).slice(0,120)}
-function browserGate(){return{allowed:!!navigator.geolocation}}
+function browserGate(){
+  const ua=navigator.userAgent||'';
+  const touch=Number(navigator.maxTouchPoints||0);
+  const smartphone=/(iPhone|iPod|Windows Phone|Android(?=.*Mobile))/i.test(ua);
+  return{
+    allowed:!!navigator.geolocation&&smartphone&&touch>0,
+    gps:!!navigator.geolocation,
+    smartphone:smartphone,
+    touch:touch
+  };
+}
 function syncViewportHeight(){
   const vv=window.visualViewport;
   const h=Math.round(vv?vv.height:window.innerHeight);
@@ -46,7 +57,14 @@ if(window.visualViewport){
   window.visualViewport.addEventListener('resize',syncViewportHeight,{passive:true});
   window.visualViewport.addEventListener('scroll',syncViewportHeight,{passive:true});
 }
-async function init(){const g=browserGate();hideAll();showHeader();if(!g.allowed){$('browserBlockView').classList.remove('hidden');return}try{CONFIG=await gas('apiPublicConfig');const n=(CONFIG.systemName||'Absensi').trim()||'Absensi';$('brand').textContent=n;document.title=n;$('version').textContent='v'+CONFIG.version;if(TOKEN)await bootstrap();else $('loginView').classList.remove('hidden')}catch(e){msg(e.message,true);$('loginView').classList.remove('hidden')}}
+async function init(){const g=browserGate();hideAll();showHeader();if(!g.allowed){
+      const m=$('browserBlockMessage');
+      if(m)m.textContent=!g.gps
+        ?'Perangkat/browser ini tidak menyediakan GPS yang diperlukan.'
+        :'Absensi siswa hanya dapat digunakan melalui smartphone/HP. Laptop, PC, Chromebook, dan tablet tidak diizinkan.';
+      $('browserBlockView').classList.remove('hidden');
+      return
+    }try{CONFIG=await gas('apiPublicConfig');const n=(CONFIG.systemName||'Absensi').trim()||'Absensi';$('brand').textContent=n;document.title=n;$('version').textContent='v'+CONFIG.version;if(TOKEN)await bootstrap();else $('loginView').classList.remove('hidden')}catch(e){msg(e.message,true);$('loginView').classList.remove('hidden')}}
 async function participantLogin(b){try{busy(b,true,'Memeriksa');const r=await gas('apiParticipantLogin',$('loginNis').value.trim(),$('loginPin').value.trim(),deviceKey(),deviceLabel());TOKEN=r.token;localStorage.setItem('af_token',TOKEN);await bootstrap()}catch(e){msg(e.message,true)}finally{busy(b,false)}}
 function showStudentRegistration(){hideAll();showHeader();ACT_PREVIEW=null;$('activationPreview').classList.add('hidden');$('registerView').classList.remove('hidden')}
 function backToLogin(){hideAll();showHeader();$('loginView').classList.remove('hidden')}
@@ -144,7 +162,15 @@ function getFreshAttendanceLocation(){
     );
   });
 }
-function platformName(){return /iPhone|iPad|iPod/i.test(navigator.userAgent)?'WEB_IOS':'WEB_BROWSER'}
+function attendanceClientInfo(){
+  return{
+    userAgent:navigator.userAgent||'',
+    touchPoints:Number(navigator.maxTouchPoints||0),
+    screenWidth:Number(screen&&screen.width||0),
+    screenHeight:Number(screen&&screen.height||0)
+  };
+}
+function platformName(){return /iPhone|iPod/i.test(navigator.userAgent)?'WEB_IOS_MOBILE':'WEB_ANDROID_MOBILE'}
 async function startAttendance(b){
   let refreshed=false;
   try{
@@ -163,6 +189,7 @@ async function startAttendance(b){
       challengeToken:ch.challengeToken,
       location:loc,
       platform:platformName(),
+      clientInfo:attendanceClientInfo(),
       integrityToken:'',
       integrityHash:''
     });
