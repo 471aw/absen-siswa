@@ -235,7 +235,7 @@ function gas(name,...args){
     .then(v=>{if(!silent)adminProcessEnd(true);return v;})
     .catch(e=>{if(!silent)adminProcessEnd(false,e&&e.message?e.message:String(e));throw e;});
 }function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}function note(t,e=false){$('msg').textContent=t;$('msg').className='msg'+(e?' err':'');$('msg').classList.remove('hidden');setTimeout(()=>$('msg').classList.add('hidden'),5000)}
-async function loadAppIdentity(){try{APP_CONFIG=await gas('apiPublicConfig');const name=((APP_CONFIG&&APP_CONFIG.systemName)||'Absensi').trim()||'Absensi';const ver=String((APP_CONFIG&&APP_CONFIG.version)||'1.6.4');if($('loginSystemName'))$('loginSystemName').textContent=name;if($('adminSystemName'))$('adminSystemName').textContent=name;if($('sideSystemName'))$('sideSystemName').textContent=name;if($('loginVersion'))$('loginVersion').textContent='Versi v'+ver;if($('adminVersion'))$('adminVersion').textContent='v'+ver;if($('sideVersion'))$('sideVersion').textContent='v'+ver;document.title=name+' • Admin';}catch(e){console.warn('Nama aplikasi gagal dimuat:',e.message||e);}}
+async function loadAppIdentity(){try{APP_CONFIG=await gas('apiPublicConfig');const name=((APP_CONFIG&&APP_CONFIG.systemName)||'Absensi').trim()||'Absensi';const ver=String((APP_CONFIG&&APP_CONFIG.version)||'1.8.0-HYBRID');if($('loginSystemName'))$('loginSystemName').textContent=name;if($('adminSystemName'))$('adminSystemName').textContent=name;if($('sideSystemName'))$('sideSystemName').textContent=name;if($('loginVersion'))$('loginVersion').textContent='Versi v'+ver;if($('adminVersion'))$('adminVersion').textContent='v'+ver;if($('sideVersion'))$('sideVersion').textContent='v'+ver;document.title=name+' • Admin';}catch(e){console.warn('Nama aplikasi gagal dimuat:',e.message||e);}}
 async function login(){try{
   const r=await gas('apiAdminLogin',$('username').value,$('password').value);
   if(String(r.role||'ADMIN')!=='SUPER_ADMIN') throw new Error('Akun ini bukan SUPER_ADMIN. Gunakan portal Administrator.');
@@ -292,22 +292,23 @@ function tab(id,b){document.querySelectorAll('.page').forEach(x=>x.classList.add
 function startHeaderClock(){if(window.__afClockTimer)return;const tick=()=>{const d=new Date(),days=['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'],months=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];if($('topDate'))$('topDate').textContent=days[d.getDay()]+', '+String(d.getDate()).padStart(2,'0')+' '+months[d.getMonth()]+' '+d.getFullYear();if($('topTime'))$('topTime').textContent=[d.getHours(),d.getMinutes(),d.getSeconds()].map(x=>String(x).padStart(2,'0')).join(':');const nm=ADMIN_NAME||'Administrator',ini=nm.split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join('').toUpperCase();if($('topAvatar'))$('topAvatar').textContent=ini||'AD';};tick();window.__afClockTimer=setInterval(tick,1000)}
 async function loadDash(){
   const r=await gas('apiAdminDashboard',TOKEN);
-  const ver=String(r.version||'1.6.4');if($('adminVersion'))$('adminVersion').textContent='v'+ver;if($('sideVersion'))$('sideVersion').textContent='v'+ver;if($('loginVersion'))$('loginVersion').textContent='Versi v'+ver;if($('sideVersion'))$('sideVersion').textContent='v'+ver;
+  const ver=String(r.version||'1.8.0-HYBRID');if($('adminVersion'))$('adminVersion').textContent='v'+ver;if($('sideVersion'))$('sideVersion').textContent='v'+ver;if($('loginVersion'))$('loginVersion').textContent='Versi v'+ver;if($('sideVersion'))$('sideVersion').textContent='v'+ver;
   $('kpis').innerHTML=[
     ['Peserta aktif',r.totalUsers],['Terjadwal hari ini',r.scheduledToday],
-    ['Hadir hari ini',r.arrived],['Terlambat',r.late],
+    ['Mode fleksibel',r.flexibleModeToday||0],['Hadir hari ini',r.arrived],
+    ['Hadir fleksibel',r.flexibleArrived||0],['Terlambat',r.late],
     ['Izin/Sakit hari ini',r.permissions],['Izin menunggu',r.pendingPermissions]
   ].map(x=>`<div class="kpi"><span class="muted">${x[0]}</span><b>${x[1]}</b></div>`).join('');
 
-  const total=Math.max(0,Number(r.scheduledToday)||0);
   const hadir=Math.max(0,Number(r.arrived)||0);
   const izin=Math.max(0,Number(r.permissions)||0);
   const belum=Math.max(0,Number(r.unrecorded)||0);
-  const denom=Math.max(1,total||hadir+izin+belum);
-  const p1=hadir/denom*100,p2=izin/denom*100;
+  const total=hadir+izin+belum;
+  const denom=Math.max(1,total);
+  const p1=Math.min(100,hadir/denom*100),p2=Math.min(100-p1,izin/denom*100);
   $('attendanceChart').innerHTML=`<div class="donutWrap">
     <div class="donut" style="background:conic-gradient(#16a34a 0 ${p1}%,#d97706 ${p1}% ${p1+p2}%,#cbd5e1 ${p1+p2}% 100%)">
-      <div class="donutCenter"><div><b>${total}</b><span>terjadwal</span></div></div>
+      <div class="donutCenter"><div><b>${total}</b><span>rekap hari ini</span></div></div>
     </div>
     <div class="legend">
       <div class="legendRow"><span class="legendLabel"><i class="legendDot" style="background:#16a34a"></i>Hadir</span><b>${hadir}</b></div>
@@ -446,10 +447,10 @@ async function loadReport(){
     if(eligible.length&&userIds.length===0)throw new Error('Pilih minimal satu peserta pada filter laporan.');
     const r=await gas('apiAdminReport',TOKEN,{from:$('repFrom').value,to:$('repTo').value,programId:$('repProgram').value,institutionId:$('repInstitution').value,locationId:$('repLocation').value,userIds:userIds});
     $('reportTitle').textContent=`Laporan Absensi ${r.from} s.d. ${r.to}`;
-    let h='<h4>Rekap Peserta</h4><table><thead><tr><th>Nama</th><th>ID</th><th>Instansi</th><th>Terjadwal</th><th>Hadir</th><th>Terlambat</th><th>Pulang Cepat</th><th>Tidak Lengkap</th><th>Izin</th><th>Sakit</th><th>Dinas</th><th>Izin + Absen</th><th>Tidak Hadir</th></tr></thead><tbody>';
-    r.summary.forEach(x=>h+=`<tr><td><b>${esc(x.user_name)}</b></td><td>${esc(x.identifier||'-')}</td><td>${esc(x.institution_name)}</td><td>${x.scheduled}</td><td>${x.present}</td><td>${x.late}</td><td>${x.early_leave}</td><td>${x.incomplete}</td><td>${x.izin}</td><td>${x.sakit}</td><td>${x.dinas}</td><td>${x.permission_conflict||0}</td><td>${x.absent}</td></tr>`);
-    h+='</tbody></table><h4 style="margin-top:22px">Detail Harian</h4><table><thead><tr><th>Tanggal</th><th>Nama</th><th>Lokasi Referensi</th><th>Status</th><th>Datang</th><th>Status Datang</th><th>Titik Datang</th><th>Akurasi</th><th>Pulang</th><th>Status Pulang</th><th>Titik Pulang</th><th>Akurasi</th><th>Catatan Izin</th><th>Risiko</th></tr></thead><tbody>';
-    r.details.forEach(a=>h+=`<tr><td>${esc(a.date)}</td><td>${esc(a.user_name)}</td><td>${esc(a.location_name)}</td><td>${esc(a.status)}</td><td>${esc(a.arrival_time||'-')}</td><td>${esc(a.arrival_status||'-')}</td><td>${gpsMapLink(a.arrival_lat,a.arrival_lng,'Lihat Titik Datang')}</td><td>${a.arrival_accuracy!==''?Math.round(Number(a.arrival_accuracy))+' m':'-'}</td><td>${esc(a.departure_time||'-')}</td><td>${esc(a.departure_status||'-')}</td><td>${gpsMapLink(a.departure_lat,a.departure_lng,'Lihat Titik Pulang')}</td><td>${a.departure_accuracy!==''?Math.round(Number(a.departure_accuracy))+' m':'-'}</td><td>${a.permission_conflict?`<span class="pill statusPending">Ada ${esc(a.permission_type)} disetujui • dihitung HADIR</span>`:(a.permission_type?esc(a.permission_type):'-')}</td><td>${esc(a.arrival_risk||a.departure_risk||'-')}</td></tr>`);
+    let h='<h4>Rekap Peserta</h4><table><thead><tr><th>Nama</th><th>ID</th><th>Instansi</th><th>Terjadwal</th><th>Hari Fleksibel</th><th>Hadir</th><th>Hadir Fleksibel</th><th>Terlambat</th><th>Pulang Cepat</th><th>Tidak Lengkap</th><th>Izin</th><th>Sakit</th><th>Dinas</th><th>Izin + Absen</th><th>Tidak Hadir</th></tr></thead><tbody>';
+    r.summary.forEach(x=>h+=`<tr><td><b>${esc(x.user_name)}</b></td><td>${esc(x.identifier||'-')}</td><td>${esc(x.institution_name)}</td><td>${x.scheduled}</td><td>${x.flexible_days||0}</td><td>${x.present}</td><td>${x.flexible_present||0}</td><td>${x.late}</td><td>${x.early_leave}</td><td>${x.incomplete}</td><td>${x.izin}</td><td>${x.sakit}</td><td>${x.dinas}</td><td>${x.permission_conflict||0}</td><td>${x.absent}</td></tr>`);
+    h+='</tbody></table><h4 style="margin-top:22px">Detail Harian</h4><table><thead><tr><th>Tanggal</th><th>Nama</th><th>Lokasi Referensi</th><th>Aturan</th><th>Status</th><th>Datang</th><th>Status Datang</th><th>Titik Datang</th><th>Akurasi</th><th>Pulang</th><th>Status Pulang</th><th>Titik Pulang</th><th>Akurasi</th><th>Catatan Izin</th><th>Risiko</th></tr></thead><tbody>';
+    r.details.forEach(a=>h+=`<tr><td>${esc(a.date)}</td><td>${esc(a.user_name)}</td><td>${esc(a.location_name)}</td><td>${esc(a.attendance_rule||'-')}</td><td>${esc(a.status)}</td><td>${esc(a.arrival_time||'-')}</td><td>${esc(a.arrival_status||'-')}</td><td>${gpsMapLink(a.arrival_lat,a.arrival_lng,'Lihat Titik Datang')}</td><td>${a.arrival_accuracy!==''?Math.round(Number(a.arrival_accuracy))+' m':'-'}</td><td>${esc(a.departure_time||'-')}</td><td>${esc(a.departure_status||'-')}</td><td>${gpsMapLink(a.departure_lat,a.departure_lng,'Lihat Titik Pulang')}</td><td>${a.departure_accuracy!==''?Math.round(Number(a.departure_accuracy))+' m':'-'}</td><td>${a.permission_conflict?`<span class="pill statusPending">Ada ${esc(a.permission_type)} disetujui • dihitung HADIR</span>`:(a.permission_type?esc(a.permission_type):'-')}</td><td>${esc(a.arrival_risk||a.departure_risk||'-')}</td></tr>`);
     h+='</tbody></table>';
     if(!r.summary.length)h='<p class="muted">Tidak ada peserta sesuai filter.</p>';
     $('reportOut').innerHTML=h;
