@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="id"><head>
 <meta name="referrer" content="no-referrer">
-<meta name="af-build" content="1.8.1-syncfix">
+<meta name="af-build" content="1.8.5-reset-reason">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
@@ -80,7 +80,7 @@ html,body{min-height:100%;background:#eaf3fb;color:var(--cp-ink);font-family:Ari
 <aside id="sidebar" class="sidebar no-print">
   <div class="sidebarHead">
     <div class="sideLogo">✓</div>
-    <div><div id="sideSystemName" class="sideBrand">Absen Murid PKL</div><div id="sideSchoolName" class="sideSub">Sekolah</div><div id="sideVersion" class="sideVersion">v1.8.0-HYBRID</div></div>
+    <div><div id="sideSystemName" class="sideBrand">Absen Murid</div><div id="sideSchoolName" class="sideSub">Sekolah</div><div id="sideVersion" class="sideVersion">v1.8.0-HYBRID</div></div>
   </div>
   <div class="sideSectionLabel">MENU UTAMA</div>
   <div class="nav">
@@ -100,7 +100,7 @@ html,body{min-height:100%;background:#eaf3fb;color:var(--cp-ink);font-family:Ari
 </aside>
 <main class="contentArea">
 <div class="top no-print">
-  <div class="topLeft"><button class="mobileMenu" onclick="toggleSidebar()">☰</button><div><div class="topAppName"><span id="adminSystemName">Absen Murid PKL</span></div><div class="topAppSub"><span class="schoolNameText">Sekolah</span> • Sistem Absensi PKL</div></div></div>
+  <div class="topLeft"><button class="mobileMenu" onclick="toggleSidebar()">☰</button><div><div class="topAppName"><span id="adminSystemName">Absen Murid</span></div><div class="topAppSub"><span class="schoolNameText">Sekolah</span> • Sistem Absensi PKL</div></div></div>
   <div class="topRight">
     <div class="topClock"><span id="topDate">-</span><b id="topTime">--:--:--</b></div>
     <div class="userAvatar" id="topAvatar">AD</div>
@@ -325,7 +325,7 @@ html,body{min-height:100%;background:#eaf3fb;color:var(--cp-ink);font-family:Ari
 </section>
 <section id="settings" class="page hidden"><div class="card"><h3>Pengaturan Sistem</h3><p class="muted">Perubahan penting langsung memengaruhi semua peserta. Play Integrity diaktifkan setelah APK sudah terhubung ke Play Console.</p><div id="settingsOut"></div></div></section>
 </main></div></div></div>
-<script src="../api-client.js?v=1830-address"></script>
+<script src="../api-client.js?v=1850-reset-reason"></script>
 <script>
 let TOKEN=sessionStorage.getItem('af_admin_token')||'', ADMIN_NAME=sessionStorage.getItem('af_admin_name')||'', ADMIN_ROLE=sessionStorage.getItem('af_admin_role')||'', ADMIN_SCHOOL=null, M=null, USERS=[], REPORT_USERS=[], APP_CONFIG=null, SUPER_DATA=null, REPORT_SELECTION_INIT=false, LAST_REPORT=null;
 const $=id=>document.getElementById(id);let ADMIN_BUSY_COUNT=0,ADMIN_DONE_TIMER=null;
@@ -337,7 +337,6 @@ function adminProcessLabel(name){
     apiAdminListUsers:'Memuat data peserta',
     apiAdminMasters:'Memuat master data',
     apiAdminApproveUser:'Memperbarui status peserta',
-    apiAdminResetAttendanceToday:'Mereset absensi hari ini',
     apiAdminDeleteUser:'Menghapus peserta',
     apiAdminUpdateUserProfile:'Memperbarui data peserta',
     apiAdminUpsertMaster:'Menyimpan master data',
@@ -538,6 +537,21 @@ async function loadDash(){
     </div>
     ${r.permissionConflicts?`<div class="dashNote"><b>${r.permissionConflicts} data perlu koreksi:</b> peserta memiliki izin yang disetujui tetapi juga melakukan absensi. Dalam laporan, kehadiran yang dihitung.</div>`:''}`;
 }
+
+async function resetAttendanceFromReport(attendanceId,userName,dateText){
+  if(!attendanceId)return;
+  const reason=prompt('Alasan reset absensi '+(userName||'peserta')+' tanggal '+(dateText||'-')+':\n\nAlasan wajib diisi dan akan dicatat pada Audit Log.');
+  if(reason===null)return;
+  const clean=String(reason||'').trim();
+  if(clean.length<5){note('Alasan reset wajib diisi minimal 5 karakter.',true);return}
+  if(!confirm('Reset absensi '+(userName||'peserta')+' tanggal '+(dateText||'-')+'?\n\nSetelah reset, siswa dapat langsung melakukan absensi kembali.'))return;
+  try{
+    const r=await gas('apiAdminResetAttendance',TOKEN,attendanceId,clean);
+    note(r.message||'Absensi berhasil direset.');
+    await Promise.all([loadReport(),loadDash()]);
+  }catch(e){note(e.message,true)}
+}
+
 async function loadUsers(){
   const r=await gas('apiAdminListUsers',TOKEN);USERS=r.users||[];REPORT_USERS=r.reportUsers||r.users||[];
   const canWrite=ADMIN_ROLE==='ADMIN';
@@ -551,7 +565,7 @@ async function loadUsers(){
       actions=(u.status==='PENDING'?`<button class="small" onclick="approve('${u.id}',true)">Setujui</button> <button class="small bad" onclick="approve('${u.id}',false)">Tolak</button> `:'')+
       `<button class="small alt" onclick="editUserProfile('${u.id}')">Edit</button> `+
       `<button class="small alt" onclick="selectAssignment('${u.id}')">Penempatan</button> `+
-      `<button class="small bad" onclick="resetAttendanceToday('${u.id}','${esc(u.name)}')">Reset Absen Hari Ini</button> <button class="small bad" onclick="deleteUser('${u.id}','${esc(u.name)}')">Hapus</button>`;
+      `<button class=\"small bad\" onclick=\"deleteUser('${u.id}','${esc(u.name)}')\">Hapus</button>`;
     }
     const device=(u.device_hash?'TERDAFTAR':'BELUM')+(u.device_label?`<br><small>${esc(u.device_label)}</small>`:'');
     h+=`<tr>
@@ -563,7 +577,6 @@ async function loadUsers(){
   h+='</tbody></table>';$('usersOut').innerHTML=h;fillAssignmentUsers();renderReportUserPicker();
 }
 async function approve(id,yes){try{await gas('apiAdminApproveUser',TOKEN,id,yes);note('Status peserta diperbarui.');await Promise.all([loadUsers(),loadDash()])}catch(e){note(e.message,true)}}
-async function resetAttendanceToday(id,name){if(!confirm('Reset absensi HARI INI untuk '+name+'?\n\nJam datang/pulang hari ini akan dihapus agar peserta dapat mencoba absensi dari awal.'))return;try{const r=await gas('apiAdminResetAttendanceToday',TOKEN,id);note(r.message||'Absensi hari ini direset.');await Promise.all([loadDash(),loadUsers()])}catch(e){note(e.message,true)}}
 
 async function editUserProfile(id){
   const u=USERS.find(x=>String(x.id)===String(id));if(!u)return;
@@ -1079,8 +1092,8 @@ async function loadReport(){
     $('reportTitle').textContent=`Laporan Absensi ${r.from} s.d. ${r.to}`;
     let h='<h4>Rekap Peserta</h4><table><thead><tr><th>Nama</th><th>ID</th><th>Instansi</th><th>Terjadwal</th><th>Hari Fleksibel</th><th>Hadir</th><th>Hadir Fleksibel</th><th>Terlambat</th><th>Pulang Cepat</th><th>Tidak Lengkap</th><th>Izin</th><th>Sakit</th><th>Dinas</th><th>Izin + Absen</th><th>Tidak Hadir</th></tr></thead><tbody>';
     r.summary.forEach(x=>h+=`<tr><td><b>${esc(x.user_name)}</b></td><td>${esc(x.identifier||'-')}</td><td>${esc(x.institution_name)}</td><td>${x.scheduled}</td><td>${x.flexible_days||0}</td><td>${x.present}</td><td>${x.flexible_present||0}</td><td>${x.late}</td><td>${x.early_leave}</td><td>${x.incomplete}</td><td>${x.izin}</td><td>${x.sakit}</td><td>${x.dinas}</td><td>${x.permission_conflict||0}</td><td>${x.absent}</td></tr>`);
-    h+='</tbody></table><h4 style="margin-top:22px">Detail Harian</h4><table><thead><tr><th>Tanggal</th><th>Nama</th><th>Lokasi Referensi</th><th>Aturan</th><th>Status</th><th>Datang</th><th>Status Datang</th><th>Titik Datang</th><th>Alamat Datang</th><th>Akurasi</th><th>Pulang</th><th>Status Pulang</th><th>Titik Pulang</th><th>Alamat Pulang</th><th>Akurasi</th><th>Catatan Izin</th><th>Risiko</th></tr></thead><tbody>';
-    r.details.forEach(a=>h+=`<tr><td>${esc(a.date)}</td><td>${esc(a.user_name)}</td><td>${esc(a.location_name)}</td><td>${esc(a.attendance_rule||'-')}</td><td>${esc(a.status)}</td><td>${esc(a.arrival_time||'-')}</td><td>${esc(a.arrival_status||'-')}</td><td>${gpsMapLink(a.arrival_lat,a.arrival_lng,'Lihat Titik Datang')}</td><td style="min-width:220px;white-space:normal">${esc(a.arrival_address||'-')}</td><td>${a.arrival_accuracy!==''?Math.round(Number(a.arrival_accuracy))+' m':'-'}</td><td>${esc(a.departure_time||'-')}</td><td>${esc(a.departure_status||'-')}</td><td>${gpsMapLink(a.departure_lat,a.departure_lng,'Lihat Titik Pulang')}</td><td style="min-width:220px;white-space:normal">${esc(a.departure_address||'-')}</td><td>${a.departure_accuracy!==''?Math.round(Number(a.departure_accuracy))+' m':'-'}</td><td>${a.permission_conflict?`<span class="pill statusPending">Ada ${esc(a.permission_type)} disetujui • dihitung HADIR</span>`:(a.permission_type?esc(a.permission_type):'-')}</td><td>${esc(a.arrival_risk||a.departure_risk||'-')}</td></tr>`);
+    h+='</tbody></table><h4 style="margin-top:22px">Detail Harian</h4><table><thead><tr><th>Tanggal</th><th>Nama</th><th>Lokasi Referensi</th><th>Aturan</th><th>Status</th><th>Datang</th><th>Status Datang</th><th>Titik Datang</th><th>Alamat Datang</th><th>Akurasi</th><th>Pulang</th><th>Status Pulang</th><th>Titik Pulang</th><th>Alamat Pulang</th><th>Akurasi</th><th>Catatan Izin</th><th>Risiko</th><th>Aksi</th></tr></thead><tbody>';
+    r.details.forEach(a=>h+=`<tr><td>${esc(a.date)}</td><td>${esc(a.user_name)}</td><td>${esc(a.location_name)}</td><td>${esc(a.attendance_rule||'-')}</td><td>${esc(a.status)}</td><td>${esc(a.arrival_time||'-')}</td><td>${esc(a.arrival_status||'-')}</td><td>${gpsMapLink(a.arrival_lat,a.arrival_lng,'Lihat Titik Datang')}</td><td style="min-width:220px;white-space:normal">${esc(a.arrival_address||'-')}</td><td>${a.arrival_accuracy!==''?Math.round(Number(a.arrival_accuracy))+' m':'-'}</td><td>${esc(a.departure_time||'-')}</td><td>${esc(a.departure_status||'-')}</td><td>${gpsMapLink(a.departure_lat,a.departure_lng,'Lihat Titik Pulang')}</td><td style="min-width:220px;white-space:normal">${esc(a.departure_address||'-')}</td><td>${a.departure_accuracy!==''?Math.round(Number(a.departure_accuracy))+' m':'-'}</td><td>${a.permission_conflict?`<span class="pill statusPending">Ada ${esc(a.permission_type)} disetujui • dihitung HADIR</span>`:(a.permission_type?esc(a.permission_type):'-')}</td><td>${esc(a.arrival_risk||a.departure_risk||'-')}</td><td>${a.attendance_id?`<button class="small alt no-print" onclick="resetAttendanceFromReport('${a.attendance_id}','${esc(a.user_name)}','${esc(a.date)}')">Reset Absensi</button>`:'-'}</td></tr>`);
     h+='</tbody></table>';
     if(!r.summary.length)h='<p class="muted">Tidak ada peserta sesuai filter.</p>';
     $('reportOut').innerHTML=h;
