@@ -2,7 +2,7 @@
   "use strict";
   // Untuk versi terpisah disarankan memakai subdomain API sendiri.
   // Ubah nilai ini sesuai Worker Cloudflare yang Anda deploy.
-  const API_URL = "https://api-absen-biasa.skai.my.id/api";
+  const API_URL = "https://api-absen-siswa.skai.my.id/api";
   const DEFAULT_TIMEOUT_MS = 90000;
 
   async function call(method, ...args) {
