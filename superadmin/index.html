@@ -179,6 +179,88 @@ html,body{overflow-x:hidden}
   color:#49657d!important;
 }
 
+
+/* ===== v1.9.0 SIDEBAR FULL VIEWPORT FIX =====
+   Desktop: sidebar fixed penuh dari atas sampai bawah layar.
+   Konten kanan tetap pada kolom kedua dan scroll sendiri bersama halaman.
+   Scrollbar sidebar disembunyikan, tetapi wheel/touchpad tetap dapat scroll.
+*/
+@media (min-width:901px){
+  #adminView:not(.hidden){
+    min-height:100vh!important;
+    min-height:100dvh!important;
+  }
+  .appShell{
+    position:relative!important;
+    grid-template-columns:255px minmax(0,1fr)!important;
+    min-height:100vh!important;
+    min-height:100dvh!important;
+    align-items:start!important;
+  }
+  .sidebar{
+    position:fixed!important;
+    left:0!important;
+    top:0!important;
+    bottom:0!important;
+    width:255px!important;
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    z-index:450!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    border-radius:0!important;
+    scrollbar-width:none!important;
+    -ms-overflow-style:none!important;
+  }
+  .sidebar::-webkit-scrollbar{
+    width:0!important;
+    height:0!important;
+    display:none!important;
+  }
+  .contentArea{
+    grid-column:2!important;
+    width:100%!important;
+    min-width:0!important;
+    min-height:100vh!important;
+    min-height:100dvh!important;
+  }
+  .appShell.sidebarCollapsed{
+    grid-template-columns:0 minmax(0,1fr)!important;
+  }
+  .appShell.sidebarCollapsed .sidebar{
+    width:0!important;
+    min-width:0!important;
+    padding-left:0!important;
+    padding-right:0!important;
+    border:0!important;
+    opacity:0!important;
+    overflow:hidden!important;
+    pointer-events:none!important;
+  }
+  .appShell.sidebarCollapsed .contentArea{
+    grid-column:2!important;
+    width:100%!important;
+  }
+}
+
+/* Mobile/tablet tetap drawer penuh layar */
+@media (max-width:900px){
+  .sidebar{
+    position:fixed!important;
+    left:0!important;
+    top:0!important;
+    bottom:0!important;
+    width:255px!important;
+    height:auto!important;
+    min-height:100vh!important;
+    min-height:100dvh!important;
+    max-height:100dvh!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+  }
+}
+
 </style><script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script></head><body>
 <div id="adminProcess" class="adminProcess hidden" aria-live="polite" aria-busy="false">
   <div class="adminProcessCard">
@@ -494,7 +576,7 @@ html,body{overflow-x:hidden}
 </section>
 <section id="settings" class="page hidden"><div class="card"><h3>Pengaturan Sistem</h3><p class="muted">Perubahan penting langsung memengaruhi semua peserta. Play Integrity diaktifkan setelah APK sudah terhubung ke Play Console.</p><div id="settingsOut"></div></div></section>
 </main></div></div></div>
-<script src="../api-client.js?v=1900-final"></script>
+<script src="../api-client.js?v=190-sidebar-full"></script>
 <script>
 let TOKEN=sessionStorage.getItem('af_super_token')||'', ADMIN_NAME=sessionStorage.getItem('af_super_name')||'', ADMIN_ROLE='SUPER_ADMIN', ADMIN_SCHOOL=null, M=null, USERS=[], REPORT_USERS=[], APP_CONFIG=null, SUPER_DATA=null, REPORT_SELECTION_INIT=false, LAST_REPORT=null, STUDENT_MASTERS=[], PROGRAM_PARTICIPANTS=[];
 const $=id=>document.getElementById(id);let ADMIN_BUSY_COUNT=0,ADMIN_DONE_TIMER=null;
