@@ -261,6 +261,110 @@ html,body{overflow-x:hidden}
   }
 }
 
+
+/* ===== v1.9.0 MASTER SISWA MULTI PICKER ===== */
+.masterStudentPicker{
+  border:1px solid #d6e4f0;
+  border-radius:10px;
+  background:#fff;
+  overflow:hidden;
+}
+.masterStudentPickerTools{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  flex-wrap:wrap;
+  padding:9px;
+  border-bottom:1px solid #e2edf5;
+  background:#f6fbff;
+}
+.masterStudentPickerTools input[type="search"]{
+  flex:1 1 260px;
+  min-width:220px;
+  min-height:38px;
+  padding:8px 10px;
+  border:1px solid #c9dbea;
+  border-radius:8px;
+}
+.masterSelectAllLabel{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  min-height:38px;
+  padding:7px 10px;
+  border:1px solid #c9dbea;
+  border-radius:8px;
+  background:#fff;
+  cursor:pointer;
+  font-weight:700;
+  white-space:nowrap;
+}
+.masterStudentPickerSummary{
+  margin-left:auto;
+  font-size:12px;
+  color:#52697d;
+  font-weight:700;
+  white-space:nowrap;
+}
+.masterStudentPickerList{
+  max-height:330px;
+  overflow:auto;
+  scrollbar-width:thin;
+}
+.masterStudentRow{
+  display:grid;
+  grid-template-columns:30px minmax(190px,1.5fr) minmax(120px,.7fr) minmax(150px,.8fr);
+  gap:10px;
+  align-items:center;
+  padding:9px 10px;
+  border-bottom:1px solid #edf3f7;
+  cursor:pointer;
+}
+.masterStudentRow:last-child{border-bottom:0}
+.masterStudentRow:hover{background:#f7fbff}
+.masterStudentRow .msIdentity b{display:block}
+.masterStudentRow .msSmall{font-size:12px;color:#60758a}
+.masterStudentRow .msStatus{
+  justify-self:end;
+  padding:4px 8px;
+  border-radius:999px;
+  background:#e9f7ee;
+  color:#16703a;
+  font-size:11px;
+  font-weight:800;
+  text-align:center;
+}
+.masterStudentRow.isAlready{
+  background:#f2f4f6!important;
+  color:#8b96a1!important;
+  cursor:not-allowed;
+}
+.masterStudentRow.isAlready .msSmall{color:#9ca6af}
+.masterStudentRow.isAlready .msStatus{
+  background:#e2e5e8;
+  color:#6d7780;
+}
+.masterStudentRow.isInactiveHistory .msStatus{
+  background:#fff5d9;
+  color:#8c6500;
+}
+.masterStudentEmpty{
+  padding:18px;
+  text-align:center;
+  color:#6b7f91;
+}
+@media(max-width:760px){
+  .masterStudentRow{
+    grid-template-columns:28px 1fr;
+  }
+  .masterStudentRow .msClass,
+  .masterStudentRow .msStatus{
+    grid-column:2;
+    justify-self:start;
+  }
+  .masterStudentPickerSummary{margin-left:0;width:100%}
+}
+
 </style><script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script></head><body>
 <div id="adminProcess" class="adminProcess hidden" aria-live="polite" aria-busy="false">
   <div class="adminProcessCard">
@@ -356,9 +460,24 @@ html,body{overflow-x:hidden}
     <div class="field"><label>Program</label><select id="ppProgram" onchange="studentProgramChangedV190()"><option value="">Pilih Program</option></select></div>
     <div id="ppJoinInfo" class="statusbox" style="flex:2">Pilih Program untuk melihat Kode Program dan peserta.</div>
   </div>
+  <div class="row" style="margin-top:10px;align-items:flex-end">
+    <div class="field" style="flex:1 1 100%">
+      <label>Pilih Master Siswa</label>
+      <div class="masterStudentPicker">
+        <div class="masterStudentPickerTools">
+          <input id="ppMasterSearch" type="search" placeholder="Cari NIS, nama, kelas, atau email..." oninput="renderMasterCandidateListV190()">
+          <label class="masterSelectAllLabel"><input id="ppMasterSelectAll" type="checkbox" onchange="toggleSelectAllMasterCandidatesV190(this.checked)"> Pilih semua yang tersedia</label>
+          <span id="ppMasterSummary" class="masterStudentPickerSummary">0 siswa</span>
+        </div>
+        <div id="ppMasterStudentList" class="masterStudentPickerList">
+          <div class="masterStudentEmpty">Pilih Program terlebih dahulu.</div>
+        </div>
+      </div>
+    </div>
+  </div>
   <div class="row" style="margin-top:10px">
-    <div class="field"><label>Tambah dari Master Siswa</label><select id="ppMasterStudent"><option value="">Pilih Master Siswa</option></select></div>
-    <button onclick="addExistingMasterToProgramV190()">Tambahkan ke Program</button>
+    <button onclick="addExistingMasterToProgramV190()">Tambahkan yang Dicentang ke Program</button>
+    <button class="alt" onclick="clearMasterCandidateSelectionV190()">Kosongkan Centang</button>
     <button class="alt" onclick="loadProgramParticipants()">Refresh Peserta</button>
   </div>
   <div id="ppPlacementEditor" class="reportPeopleBox hidden">
@@ -541,9 +660,9 @@ html,body{overflow-x:hidden}
 </section>
 <section id="settings" class="page hidden"><div class="card"><h3>Pengaturan Sistem</h3><p class="muted">Perubahan penting langsung memengaruhi semua peserta. Play Integrity diaktifkan setelah APK sudah terhubung ke Play Console.</p><div id="settingsOut"></div></div></section>
 </main></div></div></div>
-<script src="../api-client.js?v=190-sidebar-full"></script>
+<script src="../api-client.js?v=190-master-multi"></script>
 <script>
-let TOKEN=sessionStorage.getItem('af_admin_token')||'', ADMIN_NAME=sessionStorage.getItem('af_admin_name')||'', ADMIN_ROLE=sessionStorage.getItem('af_admin_role')||'', ADMIN_SCHOOL=null, M=null, USERS=[], REPORT_USERS=[], APP_CONFIG=null, SUPER_DATA=null, REPORT_SELECTION_INIT=false, LAST_REPORT=null, STUDENT_MASTERS=[], PROGRAM_PARTICIPANTS=[];
+let TOKEN=sessionStorage.getItem('af_admin_token')||'', ADMIN_NAME=sessionStorage.getItem('af_admin_name')||'', ADMIN_ROLE=sessionStorage.getItem('af_admin_role')||'', ADMIN_SCHOOL=null, M=null, USERS=[], REPORT_USERS=[], APP_CONFIG=null, SUPER_DATA=null, REPORT_SELECTION_INIT=false, LAST_REPORT=null, STUDENT_MASTERS=[], PROGRAM_PARTICIPANTS=[], PP_MASTER_SELECTED=new Set();
 const $=id=>document.getElementById(id);let ADMIN_BUSY_COUNT=0,ADMIN_DONE_TIMER=null;
 function adminProcessLabel(name){
   const labels={
@@ -1224,22 +1343,136 @@ function refreshProgramJoinInfoV190(){
   const code=p.join_code||'-';
   $('ppJoinInfo').innerHTML=`<b>${esc(p.name)}</b> • ${esc(mode)}<br>Kode Program: <code>${esc(code)}</code>${code!=='-'?` <button class="small alt" onclick="copyProgramCode('${esc(code)}')">Salin</button>`:''}`;
 }
-function refreshMasterCandidateOptionsV190(){
-  if(!$('ppMasterStudent'))return;
+function programMembershipForStudentV190(student,pid,includeInactive){
+  const rows=(student&&student.programs)||[];
+  return rows.find(p=>String(p.program_id)===String(pid)&&(includeInactive||String(p.participant_status)!=='INACTIVE'))||null;
+}
+function selectedMasterStudentIdsV190(){
+  return Array.from(PP_MASTER_SELECTED||new Set());
+}
+function clearMasterCandidateSelectionV190(){
+  PP_MASTER_SELECTED.clear();
+  if($('ppMasterSelectAll'))$('ppMasterSelectAll').checked=false;
+  renderMasterCandidateListV190();
+}
+function toggleMasterCandidateV190(id,checked){
+  if(checked)PP_MASTER_SELECTED.add(String(id));else PP_MASTER_SELECTED.delete(String(id));
+  updateMasterCandidateSummaryV190();
+}
+function availableMasterCandidatesV190(){
   const pid=$('ppProgram')?$('ppProgram').value:'';
-  const rows=STUDENT_MASTERS.filter(s=>String(s.status)!=='DELETED').filter(s=>!(s.programs||[]).some(p=>String(p.program_id)===String(pid)&&String(p.participant_status)!=='INACTIVE'));
-  $('ppMasterStudent').innerHTML='<option value="">Pilih Master Siswa</option>'+rows.map(s=>`<option value="${esc(s.id)}">${esc(s.nis)} • ${esc(s.name)} • ${esc(s.class_name||'-')}</option>`).join('');
+  if(!pid)return [];
+  return STUDENT_MASTERS.filter(s=>{
+    if(String(s.status)==='DELETED')return false;
+    return !programMembershipForStudentV190(s,pid,false);
+  });
+}
+function toggleSelectAllMasterCandidatesV190(checked){
+  const rows=availableMasterCandidatesV190();
+  if(checked)rows.forEach(s=>PP_MASTER_SELECTED.add(String(s.id)));
+  else rows.forEach(s=>PP_MASTER_SELECTED.delete(String(s.id)));
+  renderMasterCandidateListV190();
+}
+function updateMasterCandidateSummaryV190(){
+  if(!$('ppMasterSummary'))return;
+  const pid=$('ppProgram')?$('ppProgram').value:'';
+  const all=STUDENT_MASTERS.filter(s=>String(s.status)!=='DELETED');
+  const already=pid?all.filter(s=>!!programMembershipForStudentV190(s,pid,false)):[];
+  const available=pid?all.length-already.length:0;
+  const selected=pid?selectedMasterStudentIdsV190().filter(id=>all.some(s=>String(s.id)===String(id)&&!programMembershipForStudentV190(s,pid,false))).length:0;
+  $('ppMasterSummary').textContent=pid
+    ?`${all.length} siswa • ${available} tersedia • ${already.length} sudah masuk • ${selected} dipilih`
+    :`${all.length} Master Siswa`;
+  if($('ppMasterSelectAll')){
+    $('ppMasterSelectAll').disabled=!pid||available===0;
+    $('ppMasterSelectAll').checked=pid&&available>0&&selected===available;
+    $('ppMasterSelectAll').indeterminate=pid&&selected>0&&selected<available;
+  }
+}
+function renderMasterCandidateListV190(){
+  if(!$('ppMasterStudentList'))return;
+  const pid=$('ppProgram')?$('ppProgram').value:'';
+  const q=String($('ppMasterSearch')?$('ppMasterSearch').value:'').trim().toLowerCase();
+  const all=STUDENT_MASTERS
+    .filter(s=>String(s.status)!=='DELETED')
+    .slice()
+    .sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'id',{sensitivity:'base'})||String(a.nis||'').localeCompare(String(b.nis||''),'id',{numeric:true}));
+  if(!pid){
+    PP_MASTER_SELECTED.clear();
+    $('ppMasterStudentList').innerHTML='<div class="masterStudentEmpty">Pilih Program terlebih dahulu untuk memilih siswa.</div>';
+    updateMasterCandidateSummaryV190();
+    return;
+  }
+
+  // Hapus pilihan yang ternyata sudah aktif di Program ini.
+  all.forEach(s=>{if(programMembershipForStudentV190(s,pid,false))PP_MASTER_SELECTED.delete(String(s.id));});
+
+  const shown=all.filter(s=>{
+    if(!q)return true;
+    return [s.nis,s.name,s.class_name,s.email].some(v=>String(v||'').toLowerCase().includes(q));
+  });
+  if(!shown.length){
+    $('ppMasterStudentList').innerHTML='<div class="masterStudentEmpty">Tidak ada Master Siswa yang sesuai pencarian.</div>';
+    updateMasterCandidateSummaryV190();
+    return;
+  }
+
+  $('ppMasterStudentList').innerHTML=shown.map(s=>{
+    const active=programMembershipForStudentV190(s,pid,false);
+    const historical=programMembershipForStudentV190(s,pid,true);
+    const already=!!active;
+    const wasInactive=!active&&historical&&String(historical.participant_status)==='INACTIVE';
+    const checked=!already&&PP_MASTER_SELECTED.has(String(s.id));
+    const status=already
+      ?`Sudah di Program • ${esc(active.participant_status||'AKTIF')}`
+      :(wasInactive?'Pernah ikut • bisa ditambahkan lagi':'Tersedia');
+    const rowClass=already?'masterStudentRow isAlready':(wasInactive?'masterStudentRow isInactiveHistory':'masterStudentRow');
+    return `<label class="${rowClass}">
+      <input type="checkbox" value="${esc(s.id)}" ${already?'disabled':''} ${checked?'checked':''} onchange="toggleMasterCandidateV190('${esc(s.id)}',this.checked)">
+      <span class="msIdentity"><b>${esc(s.name||'-')}</b><span class="msSmall">NIS ${esc(s.nis||'-')}${s.email?' • '+esc(s.email):''}</span></span>
+      <span class="msClass">${esc(s.class_name||'-')}</span>
+      <span class="msStatus">${status}</span>
+    </label>`;
+  }).join('');
+  updateMasterCandidateSummaryV190();
+}
+function refreshMasterCandidateOptionsV190(){
+  // Nama fungsi lama dipertahankan agar pemanggil lama tetap kompatibel.
+  renderMasterCandidateListV190();
 }
 async function studentProgramChangedV190(){
-  refreshProgramJoinInfoV190();refreshMasterCandidateOptionsV190();await loadProgramParticipants();
+  PP_MASTER_SELECTED.clear();
+  if($('ppMasterSelectAll'))$('ppMasterSelectAll').checked=false;
+  refreshProgramJoinInfoV190();
+  renderMasterCandidateListV190();
+  await loadProgramParticipants();
 }
 async function addExistingMasterToProgramV190(){
   try{
-    const pid=$('ppProgram').value,sid=$('ppMasterStudent').value;
+    const pid=$('ppProgram').value;
     if(!pid)throw new Error('Pilih Program.');
-    if(!sid)throw new Error('Pilih Master Siswa.');
-    const r=await gas('apiAdminUpsertMaster',TOKEN,'PROGRAM_ADD_EXISTING_STUDENTS',{program_id:pid,student_ids:[sid]});
-    const x=r.result||{};note((x.added||x.reactivated)?'Siswa berhasil ditambahkan ke Program.':'Siswa sudah terdaftar pada Program.');
+    const ids=selectedMasterStudentIdsV190().filter(id=>{
+      const s=STUDENT_MASTERS.find(x=>String(x.id)===String(id));
+      return s&&!programMembershipForStudentV190(s,pid,false);
+    });
+    if(!ids.length)throw new Error('Centang minimal satu Master Siswa yang masih tersedia.');
+
+    // Backend membatasi 500 siswa per request. UI membaginya otomatis.
+    const total={added:0,reactivated:0,already:0,errors:[]};
+    for(let i=0;i<ids.length;i+=500){
+      const chunk=ids.slice(i,i+500);
+      note(`Menambahkan siswa ke Program… ${Math.min(i+chunk.length,ids.length)}/${ids.length}`);
+      const r=await gas('apiAdminUpsertMaster',TOKEN,'PROGRAM_ADD_EXISTING_STUDENTS',{program_id:pid,student_ids:chunk});
+      const x=r.result||{};
+      total.added+=Number(x.added||0);
+      total.reactivated+=Number(x.reactivated||0);
+      total.already+=Number(x.already||0);
+      total.errors=total.errors.concat(Array.isArray(x.errors)?x.errors:[]);
+    }
+    PP_MASTER_SELECTED.clear();
+    if($('ppMasterSelectAll'))$('ppMasterSelectAll').checked=false;
+    const success=total.added+total.reactivated;
+    note(`Selesai: ${success} siswa ditambahkan${total.already?`, ${total.already} sudah terdaftar`:''}${total.errors.length?`, ${total.errors.length} gagal`:''}.`,total.errors.length>0);
     await Promise.all([loadStudentMastersV190(),loadProgramParticipants(),loadDash()]);
   }catch(e){note(e.message,true)}
 }
