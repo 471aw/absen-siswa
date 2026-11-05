@@ -365,6 +365,52 @@ html,body{overflow-x:hidden}
   .masterStudentPickerSummary{margin-left:0;width:100%}
 }
 
+
+/* ===== v1.9.0 PESERTA TABS ===== */
+.pesertaTabs{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin:0 0 14px;
+  padding:8px;
+  background:#eef6fc;
+  border:1px solid #d7e7f3;
+  border-radius:12px;
+  position:sticky;
+  top:72px;
+  z-index:80;
+}
+.pesertaTabBtn{
+  border:1px solid #c9dcea;
+  background:#fff;
+  color:#174e79;
+  min-height:40px;
+  padding:9px 14px;
+  border-radius:9px;
+  font-weight:800;
+  cursor:pointer;
+  box-shadow:none;
+}
+.pesertaTabBtn:hover{
+  background:#f6fbff;
+}
+.pesertaTabBtn.active{
+  background:#0d79c9;
+  border-color:#0d79c9;
+  color:#fff;
+  box-shadow:0 4px 10px rgba(13,121,201,.18);
+}
+.pesertaTabPanel{display:none}
+.pesertaTabPanel.active{display:block}
+@media(max-width:700px){
+  .pesertaTabs{
+    top:64px;
+    display:grid;
+    grid-template-columns:1fr;
+  }
+  .pesertaTabBtn{width:100%}
+}
+
 </style><script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script></head><body>
 <div id="adminProcess" class="adminProcess hidden" aria-live="polite" aria-busy="false">
   <div class="adminProcessCard">
@@ -413,6 +459,9 @@ html,body{overflow-x:hidden}
   <span id="adminName" class="hidden"></span>
 </div>
 <section id="dash" class="page">
+<div id="pesertaTabPanelAkun" class="pesertaTabPanel">
+<div id="pesertaTabPanelProgram" class="pesertaTabPanel">
+<div id="pesertaTabPanelMaster" class="pesertaTabPanel active">
 <div class="card no-print" style="margin-bottom:14px">
   <div class="row">
     <div class="field"><label>Tahun</label><select id="dashYear" onchange="dashYearChanged()"></select></div>
@@ -422,6 +471,9 @@ html,body{overflow-x:hidden}
   </div>
   <div id="dashFilterInfo" class="muted" style="margin-top:8px">Statistik mengikuti Tahun, Program, dan Instansi yang dipilih.</div>
 </div>
+</div>
+</div>
+</div>
 <div id="kpis" class="grid"></div>
 <div class="dashboardVisual">
   <div class="dashPanel"><h3>Status Kehadiran Hari Ini</h3><div id="attendanceChart"></div></div>
@@ -429,6 +481,11 @@ html,body{overflow-x:hidden}
 </div>
 </section>
 <section id="users" class="page hidden">
+<div class="pesertaTabs">
+  <button type="button" id="pesertaTabBtnMaster" class="pesertaTabBtn active" onclick="showPesertaTabV190('master')">Master Siswa Sekolah</button>
+  <button type="button" id="pesertaTabBtnProgram" class="pesertaTabBtn" onclick="showPesertaTabV190('program')">Peserta Program</button>
+  <button type="button" id="pesertaTabBtnAkun" class="pesertaTabBtn" onclick="showPesertaTabV190('akun')">Akun Siswa Aktif</button>
+</div>
 <div class="card adminOnly">
   <h3>Master Siswa Sekolah</h3>
   <p class="muted"><b>Master siswa dibuat satu kali per sekolah berdasarkan NIS.</b> Setelah itu siswa yang sama dapat mengikuti banyak Program tanpa upload ulang.</p>
@@ -660,7 +717,7 @@ html,body{overflow-x:hidden}
 </section>
 <section id="settings" class="page hidden"><div class="card"><h3>Pengaturan Sistem</h3><p class="muted">Perubahan penting langsung memengaruhi semua peserta. Play Integrity diaktifkan setelah APK sudah terhubung ke Play Console.</p><div id="settingsOut"></div></div></section>
 </main></div></div></div>
-<script src="../api-client.js?v=190-master-multi"></script>
+<script src="../api-client.js?v=190-peserta-tabs"></script>
 <script>
 let TOKEN=sessionStorage.getItem('af_admin_token')||'', ADMIN_NAME=sessionStorage.getItem('af_admin_name')||'', ADMIN_ROLE=sessionStorage.getItem('af_admin_role')||'', ADMIN_SCHOOL=null, M=null, USERS=[], REPORT_USERS=[], APP_CONFIG=null, SUPER_DATA=null, REPORT_SELECTION_INIT=false, LAST_REPORT=null, STUDENT_MASTERS=[], PROGRAM_PARTICIPANTS=[], PP_MASTER_SELECTED=new Set();
 const $=id=>document.getElementById(id);let ADMIN_BUSY_COUNT=0,ADMIN_DONE_TIMER=null;
@@ -2026,5 +2083,27 @@ loadAppIdentity();if(TOKEN)start();
   window.enhanceAllTables=enhanceAllTables;
 })();
 
+</script>
+<script>
+
+function showPesertaTabV190(tab){
+  const names=['master','program','akun'];
+  names.forEach(n=>{
+    const panel=$('pesertaTabPanel'+n.charAt(0).toUpperCase()+n.slice(1));
+    const btn=$('pesertaTabBtn'+n.charAt(0).toUpperCase()+n.slice(1));
+    if(panel)panel.classList.toggle('active',n===tab);
+    if(btn)btn.classList.toggle('active',n===tab);
+  });
+  try{sessionStorage.setItem('pesertaActiveTabV190',tab)}catch(e){}
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function restorePesertaTabV190(){
+  let tab='master';
+  try{tab=sessionStorage.getItem('pesertaActiveTabV190')||'master'}catch(e){}
+  if(!['master','program','akun'].includes(tab))tab='master';
+  showPesertaTabV190(tab);
+}
+
+document.addEventListener('DOMContentLoaded',()=>setTimeout(restorePesertaTabV190,120));
 </script>
 </body></html>
