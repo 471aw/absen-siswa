@@ -713,7 +713,7 @@ html,body{overflow-x:hidden}
 </section>
 <section id="settings" class="page hidden"><div class="card"><h3>Pengaturan Sistem</h3><p class="muted">Perubahan penting langsung memengaruhi semua peserta. Play Integrity diaktifkan setelah APK sudah terhubung ke Play Console.</p><div id="settingsOut"></div></div></section>
 </main></div></div></div>
-<script src="../api-client.js?v=190-tabs-fixed"></script>
+<script src="../api-client.js?v=190-master-autoload"></script>
 <script>
 let TOKEN=sessionStorage.getItem('af_admin_token')||'', ADMIN_NAME=sessionStorage.getItem('af_admin_name')||'', ADMIN_ROLE=sessionStorage.getItem('af_admin_role')||'', ADMIN_SCHOOL=null, M=null, USERS=[], REPORT_USERS=[], APP_CONFIG=null, SUPER_DATA=null, REPORT_SELECTION_INIT=false, LAST_REPORT=null, STUDENT_MASTERS=[], PROGRAM_PARTICIPANTS=[], PP_MASTER_SELECTED=new Set();
 const $=id=>document.getElementById(id);let ADMIN_BUSY_COUNT=0,ADMIN_DONE_TIMER=null;
@@ -871,7 +871,7 @@ function pageMeta(id){return({
   inactive:['♻','Peserta Nonaktif','Lihat dan aktifkan kembali peserta Program yang telah dikeluarkan.'],
   settings:['⚙','Pengaturan','Pengaturan sistem absensi.'],
 })[id]||['•','Menu',''];}
-function tab(id,b){if((id==='staff'||id==='inactive')&&ADMIN_ROLE!=='ADMIN'){note('Menu ini hanya dapat diakses oleh Admin Sekolah.',true);id='dash';b=document.querySelector('.nav button');}document.querySelectorAll('.page').forEach(x=>x.classList.add('hidden'));$(id).classList.remove('hidden');document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));if(b)b.classList.add('active');const meta=pageMeta(id);if($('pageHeroIcon'))$('pageHeroIcon').textContent=meta[0];if($('pageHeroTitle'))$('pageHeroTitle').textContent=meta[1];if($('pageHeroSub'))$('pageHeroSub').textContent=meta[2];if($('pageBread'))$('pageBread').textContent='Dashboard  ›  '+meta[1];if(id==='dash')loadDash();if(id==='permits')loadPermits();if(id==='report')loadReport();if(id==='staff'&&ADMIN_ROLE==='ADMIN')loadStaff();if(id==='inactive'&&ADMIN_ROLE==='ADMIN')loadInactiveParticipants();if(window.innerWidth<=900)toggleSidebar(false)}
+function tab(id,b){if((id==='staff'||id==='inactive')&&ADMIN_ROLE!=='ADMIN'){note('Menu ini hanya dapat diakses oleh Admin Sekolah.',true);id='dash';b=document.querySelector('.nav button');}document.querySelectorAll('.page').forEach(x=>x.classList.add('hidden'));$(id).classList.remove('hidden');document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));if(b)b.classList.add('active');const meta=pageMeta(id);if($('pageHeroIcon'))$('pageHeroIcon').textContent=meta[0];if($('pageHeroTitle'))$('pageHeroTitle').textContent=meta[1];if($('pageHeroSub'))$('pageHeroSub').textContent=meta[2];if($('pageBread'))$('pageBread').textContent='Dashboard  ›  '+meta[1];if(id==='dash')loadDash();if(id==='permits')loadPermits();if(id==='report')loadReport();if(id==='staff'&&ADMIN_ROLE==='ADMIN')loadStaff();if(id==='inactive'&&ADMIN_ROLE==='ADMIN')loadInactiveParticipants();if(id==='users')ensureStudentMastersV190(false).then(()=>{if($('ppProgram')&&$('ppProgram').value){renderMasterCandidateListV190();loadProgramParticipants();}});if(window.innerWidth<=900)toggleSidebar(false)}
 function startHeaderClock(){if(window.__afClockTimer)return;const tick=()=>{const d=new Date(),days=['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'],months=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];if($('topDate'))$('topDate').textContent=days[d.getDay()]+', '+String(d.getDate()).padStart(2,'0')+' '+months[d.getMonth()]+' '+d.getFullYear();if($('topTime'))$('topTime').textContent=[d.getHours(),d.getMinutes(),d.getSeconds()].map(x=>String(x).padStart(2,'0')).join(':');const nm=ADMIN_NAME||'Administrator',ini=nm.split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join('').toUpperCase();if($('topAvatar'))$('topAvatar').textContent=ini||'AD';};tick();window.__afClockTimer=setInterval(tick,1000)}
 function dashFilterPayload(){
   return {
@@ -1325,22 +1325,43 @@ function refreshStudentProgramOptionsV190(){
   refreshProgramJoinInfoV190();
 }
 function studentSchoolChangedV190(){
-  STUDENT_MASTERS=[];PROGRAM_PARTICIPANTS=[];
+  STUDENT_MASTERS=[];PROGRAM_PARTICIPANTS=[];window.__studentMastersLoadedSchoolV190='';
   refreshStudentProgramOptionsV190();
   if($('studentMastersOut'))$('studentMastersOut').innerHTML='<p class="muted">Memuat Master Siswa…</p>';
   if($('programParticipantsOut'))$('programParticipantsOut').innerHTML='<p class="muted">Pilih Program untuk melihat peserta.</p>';
   loadStudentMastersV190();
 }
 async function loadStudentMastersV190(){
-  if(!$('studentMastersOut'))return;
+  if(!$('studentMastersOut'))return [];
   const sid=selectedStudentSchoolIdV190();
-  if(!sid){STUDENT_MASTERS=[];$('studentMastersOut').innerHTML='<p class="muted">Pilih sekolah terlebih dahulu.</p>';return}
+  if(!sid){
+    STUDENT_MASTERS=[];
+    window.__studentMastersLoadedSchoolV190='';
+    $('studentMastersOut').innerHTML='<p class="muted">Pilih sekolah terlebih dahulu.</p>';
+    refreshMasterCandidateOptionsV190();
+    return [];
+  }
   try{
     const r=await gas('apiAdminUpsertMaster',TOKEN,'STUDENT_MASTERS',{school_id:sid});
     STUDENT_MASTERS=Array.isArray(r.rows)?r.rows:[];
+    window.__studentMastersLoadedSchoolV190=String(sid);
     renderStudentMastersV190();
     refreshMasterCandidateOptionsV190();
-  }catch(e){note(e.message,true)}
+    return STUDENT_MASTERS;
+  }catch(e){
+    window.__studentMastersLoadedSchoolV190='';
+    note(e.message,true);
+    return [];
+  }
+}
+async function ensureStudentMastersV190(force){
+  const sid=selectedStudentSchoolIdV190();
+  if(!sid)return [];
+  if(!force && window.__studentMastersLoadedSchoolV190===String(sid)){
+    refreshMasterCandidateOptionsV190();
+    return STUDENT_MASTERS;
+  }
+  return await loadStudentMastersV190();
 }
 function renderStudentMastersV190(){
   if(!$('studentMastersOut'))return;
@@ -1497,6 +1518,7 @@ async function studentProgramChangedV190(){
   PP_MASTER_SELECTED.clear();
   if($('ppMasterSelectAll'))$('ppMasterSelectAll').checked=false;
   refreshProgramJoinInfoV190();
+  await ensureStudentMastersV190(false);
   renderMasterCandidateListV190();
   await loadProgramParticipants();
 }
@@ -1534,6 +1556,7 @@ async function loadProgramParticipants(){
   if(!$('ppProgram'))return;
   const pid=$('ppProgram').value;
   if(!pid){PROGRAM_PARTICIPANTS=[];$('programParticipantsOut').innerHTML='<p class="muted">Pilih Program untuk melihat peserta.</p>';refreshMasterCandidateOptionsV190();return}
+  await ensureStudentMastersV190(false);
   try{
     const r=await gas('apiAdminUpsertMaster',TOKEN,'PROGRAM_PARTICIPANTS',{program_id:pid});
     PROGRAM_PARTICIPANTS=Array.isArray(r.rows)?r.rows:[];
@@ -2082,7 +2105,7 @@ loadAppIdentity();if(TOKEN)start();
 </script>
 <script>
 
-function showPesertaTabV190(tab,scrollTop){
+async function showPesertaTabV190(tab,scrollTop){
   const map={master:'Master',program:'Program',akun:'Akun'};
   if(!map[tab])tab='master';
 
@@ -2101,6 +2124,15 @@ function showPesertaTabV190(tab,scrollTop){
   });
 
   try{sessionStorage.setItem('pesertaActiveTabV190',tab)}catch(e){}
+
+  if(tab==='master'||tab==='program'){
+    await ensureStudentMastersV190(false);
+    if(tab==='program'){
+      renderMasterCandidateListV190();
+      if($('ppProgram')&&$('ppProgram').value)await loadProgramParticipants();
+    }
+  }
+
   if(scrollTop!==false){
     const users=document.getElementById('users');
     if(users)users.scrollIntoView({block:'start',behavior:'smooth'});
