@@ -366,7 +366,7 @@ html,body{overflow-x:hidden}
 }
 
 
-/* ===== v1.9.0 PESERTA TABS ===== */
+/* ===== v1.9.0 PESERTA TAB FIXED ===== */
 .pesertaTabs{
   display:flex;
   gap:8px;
@@ -376,38 +376,34 @@ html,body{overflow-x:hidden}
   background:#eef6fc;
   border:1px solid #d7e7f3;
   border-radius:12px;
-  position:sticky;
-  top:72px;
-  z-index:80;
 }
 .pesertaTabBtn{
+  flex:1 1 180px;
+  min-height:42px;
   border:1px solid #c9dcea;
   background:#fff;
   color:#174e79;
-  min-height:40px;
   padding:9px 14px;
   border-radius:9px;
   font-weight:800;
   cursor:pointer;
   box-shadow:none;
 }
-.pesertaTabBtn:hover{
-  background:#f6fbff;
-}
+.pesertaTabBtn:hover{background:#f6fbff}
 .pesertaTabBtn.active{
   background:#0d79c9;
   border-color:#0d79c9;
   color:#fff;
   box-shadow:0 4px 10px rgba(13,121,201,.18);
 }
-.pesertaTabPanel{display:none}
-.pesertaTabPanel.active{display:block}
+.pesertaTabPanel{
+  display:none!important;
+}
+.pesertaTabPanel.active{
+  display:block!important;
+}
 @media(max-width:700px){
-  .pesertaTabs{
-    top:64px;
-    display:grid;
-    grid-template-columns:1fr;
-  }
+  .pesertaTabs{display:grid;grid-template-columns:1fr}
   .pesertaTabBtn{width:100%}
 }
 
@@ -466,9 +462,6 @@ html,body{overflow-x:hidden}
   <span id="adminName" class="hidden"></span>
 </div>
 <section id="dash" class="page">
-<div id="pesertaTabPanelAkun" class="pesertaTabPanel">
-<div id="pesertaTabPanelProgram" class="pesertaTabPanel">
-<div id="pesertaTabPanelMaster" class="pesertaTabPanel active">
 <div class="card no-print" style="margin-bottom:14px">
   <div class="row">
     <div class="field"><label>Tahun</label><select id="dashYear" onchange="dashYearChanged()"></select></div>
@@ -478,9 +471,6 @@ html,body{overflow-x:hidden}
   </div>
   <div id="dashFilterInfo" class="muted" style="margin-top:8px">Statistik mengikuti Tahun, Program, dan Instansi yang dipilih.</div>
 </div>
-</div>
-</div>
-</div>
 <div id="kpis" class="grid"></div>
 <div class="dashboardVisual">
   <div class="dashPanel"><h3>Status Kehadiran Hari Ini</h3><div id="attendanceChart"></div></div>
@@ -488,11 +478,13 @@ html,body{overflow-x:hidden}
 </div>
 </section>
 <section id="users" class="page hidden">
-<div class="pesertaTabs">
-  <button type="button" id="pesertaTabBtnMaster" class="pesertaTabBtn active" onclick="showPesertaTabV190('master')">Master Siswa Sekolah</button>
-  <button type="button" id="pesertaTabBtnProgram" class="pesertaTabBtn" onclick="showPesertaTabV190('program')">Peserta Program</button>
-  <button type="button" id="pesertaTabBtnAkun" class="pesertaTabBtn" onclick="showPesertaTabV190('akun')">Akun Siswa Aktif</button>
+
+<div class="pesertaTabs" role="tablist" aria-label="Menu Peserta">
+  <button type="button" id="pesertaTabBtnMaster" class="pesertaTabBtn active" onclick="showPesertaTabV190('master')" role="tab">Master Siswa Sekolah</button>
+  <button type="button" id="pesertaTabBtnProgram" class="pesertaTabBtn" onclick="showPesertaTabV190('program')" role="tab">Peserta Program</button>
+  <button type="button" id="pesertaTabBtnAkun" class="pesertaTabBtn" onclick="showPesertaTabV190('akun')" role="tab">Akun Siswa Aktif</button>
 </div>
+<div id="pesertaTabPanelMaster" class="pesertaTabPanel active" role="tabpanel">
 <div class="card adminOnly">
   <h3>Master Siswa Sekolah</h3>
   <p class="muted"><b>Master siswa dibuat satu kali per sekolah berdasarkan NIS.</b> Setelah itu siswa yang sama dapat mengikuti banyak Program tanpa upload ulang.</p>
@@ -519,7 +511,8 @@ html,body{overflow-x:hidden}
   </div>
   <div id="studentMastersOut" class="scroll" style="margin-top:12px"></div>
 </div>
-
+</div>
+<div id="pesertaTabPanelProgram" class="pesertaTabPanel" role="tabpanel" hidden>
 <div class="card adminOnly">
   <h3>Peserta Program</h3>
   <p class="muted">Peserta Program berasal dari Master Siswa sekolah. Admin dapat menambahkan siswa dari Master Siswa, atau siswa dapat bergabung sendiri memakai <b>Kode Program</b> jika Program mengizinkan.</p>
@@ -559,12 +552,15 @@ html,body{overflow-x:hidden}
   </div>
   <div id="programParticipantsOut" class="scroll" style="margin-top:12px"></div>
 </div>
-
+</div>
+<div id="pesertaTabPanelAkun" class="pesertaTabPanel" role="tabpanel" hidden>
 <div class="card">
   <div class="row"><h3 style="flex:1">Akun Siswa Aktif</h3><button class="alt no-print" onclick="loadUsers()">Refresh</button></div>
   <p class="muted">Menampilkan siswa yang sudah mengaktifkan akun. Master siswa yang belum aktivasi tetap tersedia pada tabel Master Siswa.</p>
   <div id="usersOut" class="scroll"></div>
 </div>
+</div>
+
 </section>
 
 <section id="masters" class="page hidden">
@@ -752,7 +748,7 @@ html,body{overflow-x:hidden}
 </section>
 <section id="settings" class="page hidden"><div class="card"><h3>Pengaturan Sistem</h3><p class="muted">Perubahan penting langsung memengaruhi semua peserta. Play Integrity diaktifkan setelah APK sudah terhubung ke Play Console.</p><div id="settingsOut"></div></div></section>
 </main></div></div></div>
-<script src="../api-client.js?v=190-peserta-tabs"></script>
+<script src="../api-client.js?v=190-tabs-fixed"></script>
 <script>
 let TOKEN=sessionStorage.getItem('af_super_token')||'', ADMIN_NAME=sessionStorage.getItem('af_super_name')||'', ADMIN_ROLE='SUPER_ADMIN', ADMIN_SCHOOL=null, M=null, USERS=[], REPORT_USERS=[], APP_CONFIG=null, SUPER_DATA=null, REPORT_SELECTION_INIT=false, LAST_REPORT=null, STUDENT_MASTERS=[], PROGRAM_PARTICIPANTS=[], PP_MASTER_SELECTED=new Set();
 const $=id=>document.getElementById(id);let ADMIN_BUSY_COUNT=0,ADMIN_DONE_TIMER=null;
@@ -2204,22 +2200,34 @@ loadAppIdentity();if(TOKEN)start();
 </script>
 <script>
 
-function showPesertaTabV190(tab){
-  const names=['master','program','akun'];
-  names.forEach(n=>{
-    const panel=$('pesertaTabPanel'+n.charAt(0).toUpperCase()+n.slice(1));
-    const btn=$('pesertaTabBtn'+n.charAt(0).toUpperCase()+n.slice(1));
-    if(panel)panel.classList.toggle('active',n===tab);
-    if(btn)btn.classList.toggle('active',n===tab);
+function showPesertaTabV190(tab,scrollTop){
+  const map={master:'Master',program:'Program',akun:'Akun'};
+  if(!map[tab])tab='master';
+
+  Object.keys(map).forEach(k=>{
+    const panel=document.getElementById('pesertaTabPanel'+map[k]);
+    const btn=document.getElementById('pesertaTabBtn'+map[k]);
+    const active=(k===tab);
+    if(panel){
+      panel.classList.toggle('active',active);
+      panel.hidden=!active;
+    }
+    if(btn){
+      btn.classList.toggle('active',active);
+      btn.setAttribute('aria-selected',active?'true':'false');
+    }
   });
+
   try{sessionStorage.setItem('pesertaActiveTabV190',tab)}catch(e){}
-  window.scrollTo({top:0,behavior:'smooth'});
+  if(scrollTop!==false){
+    const users=document.getElementById('users');
+    if(users)users.scrollIntoView({block:'start',behavior:'smooth'});
+  }
 }
 function restorePesertaTabV190(){
   let tab='master';
   try{tab=sessionStorage.getItem('pesertaActiveTabV190')||'master'}catch(e){}
-  if(!['master','program','akun'].includes(tab))tab='master';
-  showPesertaTabV190(tab);
+  showPesertaTabV190(tab,false);
 }
 
 document.addEventListener('DOMContentLoaded',()=>setTimeout(restorePesertaTabV190,120));
